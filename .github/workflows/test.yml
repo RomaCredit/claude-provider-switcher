@@ -38,3 +38,50 @@ jobs:
         with:
           name: distributions
           path: dist/*
+  release-install:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install released POSIX archive twice
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          CLAUDE_SWITCHER_VERSION: ${{ github.ref_name }}
+          CLAUDE_SWITCHER_BIN_DIR: ${{ runner.temp }}/ccs-bin
+          CLAUDE_SWITCHER_DATA_DIR: ${{ runner.temp }}/ccs-data
+        run: |
+          sh install.sh
+          "$CLAUDE_SWITCHER_BIN_DIR/ccs" --version
+          "$CLAUDE_SWITCHER_BIN_DIR/claude-provider-switcher" --version
+          sh install.sh
+          "$CLAUDE_SWITCHER_BIN_DIR/ccs" --version
+      - name: Install released Windows archive twice
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CCS_RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'ccs-local'
+          function Get-Command {
+            param([string]$Name)
+            if ($Name -ne 'pipx') {
+              Microsoft.PowerShell.Core\Get-Command $Name -ErrorAction SilentlyContinue
+            }
+          }
+          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Installer failed.' }
+          $commands = Join-Path $env:LOCALAPPDATA 'claude-provider-switcher\venv\Scripts'
+          & "$commands\ccs.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw 'ccs entry point failed.' }
+          & "$commands\claude-provider-switcher.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw 'Long entry point failed.' }
+          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Repeat installer failed.' }

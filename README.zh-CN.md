@@ -136,6 +136,8 @@ python -m unittest discover -s tests -v
 `CCS_TEST_REAL_CLAUDE=1` 可额外验证真实 Claude Code 的 `auth status` 配置读取，
 不会发起推理请求。POSIX 安装器在 Linux/macOS CI 运行。测试通过不代表已经验证所有
 第三方网关的推理、流式输出或工具调用行为。
+Windows 测试会用临时凭据验证 Credential Manager；macOS CI 设置
+`CCS_TEST_NATIVE_KEYCHAIN=1` 验证 Keychain。发布标签还会触发三个平台的在线安装测试。
 
 ## 许可证
 

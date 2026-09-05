@@ -169,6 +169,7 @@ POSIX installers are exercised on Linux/macOS CI. Claude's own auth files and
 conversation files are never migration targets.
 Native Windows Credential Manager is tested with a disposable credential;
 macOS CI enables `CCS_TEST_NATIVE_KEYCHAIN=1` for the equivalent Keychain check.
+Release tags additionally exercise online installation on all three platforms.
 
 Reference: [Claude Code gateway configuration](https://code.claude.com/docs/en/llm-gateway-connect).
 

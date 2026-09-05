@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-provider-switcher"
+version = "0.1.0"
+description = "Manage Claude Code provider profiles, credentials, and configuration conflicts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "RomaCredit"}]
+dependencies = []
+keywords = ["claude-code", "anthropic", "provider-switcher", "cli"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+]
+
+[project.scripts]
+ccs = "claude_provider_switcher.cli:main"
+claude-provider-switcher = "claude_provider_switcher.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/RomaCredit/claude-provider-switcher"
+Issues = "https://github.com/RomaCredit/claude-provider-switcher/issues"
+
+[tool.setuptools.packages.find]
+include = ["claude_provider_switcher*"]

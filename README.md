@@ -36,7 +36,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.0/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.sh | sh
 ccs --version
 ```
 
@@ -44,7 +44,7 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.0/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.ps1 | iex
 ```
 
 ## Quick start

@@ -34,7 +34,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.0/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.sh | sh
 ccs --version
 ```
 
@@ -42,7 +42,7 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.0/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.ps1 | iex
 ```
 
 ## 快速开始

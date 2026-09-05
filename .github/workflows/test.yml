@@ -69,19 +69,13 @@ jobs:
         env:
           CCS_RELEASE_VERSION: ${{ github.ref_name }}
         run: |
-          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'ccs-local'
-          function Get-Command {
-            param([string]$Name)
-            if ($Name -ne 'pipx') {
-              Microsoft.PowerShell.Core\Get-Command $Name -ErrorAction SilentlyContinue
-            }
-          }
-          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION
+          $installDirectory = Join-Path $env:RUNNER_TEMP 'ccs-venv'
+          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION -NoPipx -InstallDirectory $installDirectory
           if ($LASTEXITCODE -ne 0) { throw 'Installer failed.' }
-          $commands = Join-Path $env:LOCALAPPDATA 'claude-provider-switcher\venv\Scripts'
+          $commands = Join-Path $installDirectory 'Scripts'
           & "$commands\ccs.exe" --version
           if ($LASTEXITCODE -ne 0) { throw 'ccs entry point failed.' }
           & "$commands\claude-provider-switcher.exe" --version
           if ($LASTEXITCODE -ne 0) { throw 'Long entry point failed.' }
-          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION
+          & ./install.ps1 -Version $env:CCS_RELEASE_VERSION -NoPipx -InstallDirectory $installDirectory
           if ($LASTEXITCODE -ne 0) { throw 'Repeat installer failed.' }

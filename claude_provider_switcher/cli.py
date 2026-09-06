@@ -35,9 +35,11 @@ def parser() -> argparse.ArgumentParser:
     doctor.add_argument("--json", action="store_true")
     use = commands.add_parser("use", help="Back up and update Claude user settings")
     use.add_argument("name")
-    use.add_argument("--no-repair-history", action="store_true", help="Skip the project record reconciliation that normally follows a switch")
+    use.add_argument("--no-repair-history", action="store_true", help="Skip the read-only history check after switching")
     repair = commands.add_parser("repair-history", help="Reconcile duplicated project records without switching profile")
-    repair.add_argument("--check", action="store_true", help="Report only; write nothing")
+    mode = repair.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="Report only; write nothing")
+    mode.add_argument("--yes", action="store_true", help="Confirm Claude is closed and apply non-conflicting repairs")
     repair.add_argument("--json", action="store_true")
     run = commands.add_parser("run", help="Start Claude with isolated provider settings for one process")
     run.add_argument("name")
@@ -93,18 +95,18 @@ def confirm(message: str, yes: bool) -> None:
 
 
 def history_message(report: dict) -> None:
-    if report["duplicate_folders"]:
-        verb, tense = ("merged", "updated") if report["applied"] else ("would merge", "to update")
-        print(
-            f"History: {verb} {report['duplicate_folders']} folder(s) recorded under several path forms; "
-            f"{report['project_entries_updated']} project entr(ies) and "
-            f"{report['history_entries_normalized']} prompt record(s) {tense}."
-        )
+    if report["pending_changes"]:
+        action = "updated" if report["applied"] else "would update"
+        print(f"History: {action} {report['project_entries_updated']} project record(s) and {report['history_entries_normalized']} prompt path label(s).")
+        if not report["applied"]:
+            print("Close Claude, then run 'ccs repair-history' to apply these changes.")
     else:
-        print("History: project records are consistent; nothing to reconcile.")
+        print("History: no automatic changes needed.")
+    if report["conflicts"]:
+        print(f"History: {len(report['conflicts'])} folder(s) have conflicting configuration; those folders were left untouched. Resolve manually with Claude closed.")
     if report["backup"]:
         print(f"History backup: {report['backup']}")
-    print("Conversations are kept per working directory and are not filtered by provider, so switching never hides them.")
+    print("Conversation transcripts are never read or rewritten by this repair.")
 
 
 def switch_message(switcher: Switcher, name: str, repair_history: bool = True):
@@ -120,21 +122,26 @@ def switch_message(switcher: Switcher, name: str, repair_history: bool = True):
     print("Restart Claude Code. This updated user settings only; shell, project or managed overrides may still apply.")
     print("Check 'ccs doctor' and Claude's /status. Subscription login is not performed by this tool.")
     if repair_history:
-        history_message(switcher.repair_history())
+        try:
+            history_message(switcher.repair_history(apply=False))
+        except (SwitcherError, OSError, ValueError):
+            print("WARNING: Provider switch succeeded, but the read-only history check could not complete. Close Claude and run 'ccs repair-history --check'.", file=sys.stderr)
 
 
 def execute(args, switcher: Switcher) -> int:
     if args.command == "use":
         switch_message(switcher, args.name, not args.no_repair_history)
     elif args.command == "repair-history":
+        if not args.check:
+            confirm("Have you closed Claude Code and related desktop sessions? Apply non-conflicting repairs?", args.yes)
         report = switcher.repair_history(apply=not args.check)
         if args.json:
             print(json.dumps(report, ensure_ascii=True, indent=2))
         else:
             for key, value in report.items():
-                print(f"{key}: {', '.join(value) if isinstance(value, list) else value}")
+                print(f"{key}: {json.dumps(value, ensure_ascii=True) if isinstance(value, list) else value}")
             history_message(report)
-        return 1 if args.check and report["duplicate_folders"] else 0
+        return 1 if report["conflicts"] or (args.check and report["pending_changes"]) else 0
     elif args.command in {None, "status"}:
         status = switcher.status()
         if getattr(args, "json", False):

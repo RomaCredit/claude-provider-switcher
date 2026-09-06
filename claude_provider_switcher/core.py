@@ -141,9 +141,9 @@ class Switcher:
         return backup
 
     def repair_history(self, *, apply: bool = True) -> dict:
-        """Reconcile project records. Switching cannot hide a conversation, but it
-        is the moment a second entry point starts writing them, so 'use' follows
-        a switch with this."""
+        """Checks are read-only; writes require the caller to stop Claude."""
+        if not apply:
+            return self.history.repair(apply=False)
         with mutation_lock(self.root), mutation_lock(self.claude_home):
             return self.history.repair(apply=apply)
 

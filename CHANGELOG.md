@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.4
+
+- Make the post-switch history check read-only. Explicit repair now requires
+  confirmation that Claude Code and related desktop sessions are closed;
+  use `--yes` only after stopping those writers.
+- Replace the richest-record-wins policy with conservative conflict handling:
+  conflicting folders and their prompt labels are untouched. Only agreed
+  bookkeeping fields can fill missing entries. Never infer trust, union
+  allowed tools, or replace MCP configurations.
+- Correct `--check` to report actual pending changes or unresolved conflicts,
+  not the number of path aliases. A second check after successful repair exits 0.
+- Snapshot file bytes and identity; check all sources after staging and before
+  each replacement. Abort on detected concurrent changes and report partial
+  progress without overwriting newer state with a rollback.
+- Back up exact source bytes with private permissions before any repair.
+  Reject symlinks/hard links and preserve BOM, line endings, malformed JSONL
+  lines and missing final newline. Preserve literal POSIX backslashes.
+- A failed post-switch check warns without claiming the provider switch failed.
+- These checks are not a cross-process transaction; close Claude before repair.
+  Existing `history-*` backups are restored manually, not by `ccs backup restore`.
+
 ## 0.1.3
 
 - Add `ccs repair-history`, which merges the per-project records that Windows

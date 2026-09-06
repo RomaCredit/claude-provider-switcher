@@ -5,7 +5,7 @@
 settings，同时保留权限、hooks 等无关设置。
 
 它**不是** Claude Desktop 对话迁移工具，也不会改动 Claude Code 的会话转录文件；
-切换 provider 不会隐藏任何会话，详见[会话历史](#会话历史)。
+历史检查与校正的具体范围见[会话历史](#会话历史)，不保证所有客户端的历史显示行为。
 Claude Code 的最终配置还会受到环境变量、项目 settings、命令行参数和组织托管
 策略影响，因此每次切换后都应执行 `ccs doctor`，并在 Claude Code 中查看
 `/status`。
@@ -16,7 +16,7 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 已有 pipx 的环境可以直接安装：
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
 ccs --version
 ```
 
@@ -35,7 +35,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.sh | sh
 ccs --version
 ```
 
@@ -43,7 +43,7 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.ps1 | iex
 ```
 
 ## 快速开始
@@ -106,11 +106,11 @@ Claude Code 使用的是根地址，**不能照搬 Codex 预设的 `/v1` 后缀*
 
 ### 从旧版升级
 
-使用安装脚本的用户重新运行上方 `v0.1.3` 安装命令即可。
+使用安装脚本的用户重新运行上方 `v0.1.4` 安装命令即可。
 通过 pipx 安装的用户执行：
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
 ccs --version
 ccs profile list
 ```
@@ -130,9 +130,9 @@ API profile 的地址必须提供 Anthropic Messages API，即 Claude Code 使�
 ## 命令
 
 ```text
-ccs use <name>                         备份并更新用户 settings，随后校正历史记录
+ccs use <name>                         备份并切换 settings，随后只读检查历史
 ccs run <name> [-- claude 参数]       以隔离配置启动一次 Claude
-ccs repair-history [--check] [--json]  只校正项目记录，不切换 profile
+ccs repair-history [--check | --yes] [--json]
 ccs status [--json]                    显示本地配置和凭据后端
 ccs doctor [--json]                    检查 shell、项目和托管配置冲突
 ccs profile list
@@ -155,27 +155,48 @@ ccs backup restore <id> --yes
 
 ## 会话历史
 
-切换 provider 不会隐藏任何会话。Claude Code 不在会话上记录 provider，因此没有
-任何按 provider 过滤历史的机制，而本工具只改写 `settings.json`。转录文件始终位于
-`<claude-home>/projects/<编码后的工作目录>/<session>.jsonl`；`ccs run` 会把
-`CLAUDE_CONFIG_DIR` 指向同一目录，所以 `ccs run <name> -- --resume` 可以继续在
-任何其他 profile 下开始的会话。
+本工具不迁移、不读取或重写 `<claude-home>/projects/` 下的会话转录。
+`ccs run` 保持相同的 `CLAUDE_CONFIG_DIR`，并允许传入 `--resume`、`--continue`；
+实际能否恢复会话仍由 Claude Code 决定。这不是 Codex 的 `model_provider` 同步机制。
 
-真正会分裂的是按原始工作目录字符串索引的项目记录。Windows 上 CLI 写入
-`D:/WorkSpace/app`，桌面端写入 `D:\WorkSpace\app`，同一个目录留下两条记录，
-导致信任状态、已授权工具、MCP 配置和历史提示补全被拆开。`ccs use` 在切换后会
-自动校正这些记录，`ccs repair-history` 也可以单独执行：
+Windows 的项目记录可能同时使用 `D:/WorkSpace/app` 和 `D:\WorkSpace\app`，
+导致同一目录的会话元数据、信任状态、工具或 MCP 配置不一致。**从 0.1.4 起，
+普通 `ccs use` 和菜单切换只检查这些记录，不自动写入历史文件。**
 
 ```text
-ccs repair-history --check          只报告重复项，不写入；发现问题返回 1
-ccs repair-history                  备份两个文件后合并
-ccs use <name> --no-repair-history  只切换，不校正
+ccs repair-history --check --json   只读检查，不创建目录、文件或锁
+ccs repair-history                  确认退出 Claude 后修复
+ccs repair-history --yes            已退出 Claude 时供非交互脚本使用
+ccs use <name> --no-repair-history  只切换，跳过历史检查
 ```
 
-合并采用镜像而非收敛：同一目录的每种路径写法都会写入合并后的内容，冲突时以
-字段更完整的那条为准，这样桌面端刚创建的空壳记录不会把信任状态重置掉。写入前
-`.claude.json` 和 `history.jsonl` 都会复制到 `backups/history-<id>/`。历史提示
-只会改成 Claude Code 自己用过的写法，转录文件永远不被改写或删除。
+执行实际修复前，必须关闭所有 Claude Code 和相关桌面会话。只有已知且无冲突的会话
+元数据（如 `lastSessionId`）可以补齐。若字段值不一致，或一方缺少信任、工具、
+MCP、未知配置字段，该目录的全部项目记录和历史提示路径均原样保留，报告冲突数量。
+不会按“字段多的一方”覆盖，不会自动合并授权范围。冲突需要在关闭 Claude 后人工处理，
+报告不显示配置值和密钥。
+
+无冲突目录保留各路径别名；`history.jsonl` 只采用已出现过的路径写法。
+损坏行、BOM、CRLF/LF 和末尾缺少换行均保留，不删除提示或会话。
+转录目录清单仅采用一种旧版编码规则作辅助报告，未匹配不代表目录失效或历史丢失。
+
+`--check` 在有待修复项或未解决冲突时返回 1，两者都没有时返回 0。
+两条路径记录已经一致，即使别名还在也返回 0；只有提示路径待修复时不会漏报。
+实际修复完成但仍有冲突也返回 1。JSON 中 `pending_changes` 描述本次分析的输入，
+`applied` 表示是否写入；完成后再次 `--check` 检查当前结果。
+
+写入前把两个已存在的源文件逐字节备份到
+`~/.claude-provider-switcher/backups/history-<id>/`，并限制访问权限。
+每次暂存完成、替换前都检查两个源文件的内容与文件身份，检测到并发修改、删除、替换
+或链接文件就停止。若只写入了第一份文件，错误会说明已完成的部分和备份位置，不自动
+回滚覆盖其他进程的新数据。
+
+**这不是 Claude 也会遵守的锁，也不是跨文件事务。** 最后一次检查后仍存在竞争窗口，
+所以必须先退出 Claude；`--yes` 是退出确认，不是强制覆盖开关。
+`history-*` 备份暂不支持 `ccs backup restore`：需要手工恢复时，先退出 Claude，
+另存当前文件，对照报告中的源路径比较备份内的 `claude.json`、`history.jsonl`，
+仅恢复确实需要的文件。备份可能含密钥，不能贴到公开 issue。
+切换后的只读检查若失败会给出警告，但不会误报 provider 切换失败。
 
 ## 安全机制
 

@@ -15,6 +15,16 @@ settings and are protected like credentials. POSIX files are mode 0600;
 Windows files have a current-user-only ACL. A compromised process running as
 the same user, an administrator, or Claude's own tools can still access secrets.
 
+History repair has a separate safety boundary: normal switching only checks
+history. Explicit repair requires stopping Claude first and confirming this,
+interactively or with `--yes`. File snapshot guards detect changes but cannot
+eliminate races with a writer that does not share our locks. Writes across
+`.claude.json` and `history.jsonl` are not one atomic transaction. Partial
+failures retain private source backups and report progress, without rollback.
+Conflicting trust, tool, MCP or unknown settings remain untouched. These
+backups can contain prompts and credentials; restore them manually with all
+Claude processes closed and after preserving the current files separately.
+
 No tool in this project overrides organization-managed Claude policies.
 `ccs run` is a provider launcher, not a security sandbox. It preserves unrelated
 user hooks and permission choices and does not suppress Claude's own telemetry.

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-version="${CLAUDE_SWITCHER_VERSION:-v0.1.3}"
+version="${CLAUDE_SWITCHER_VERSION:-v0.1.4}"
 if ! command -v python3 >/dev/null 2>&1 ||
    ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
   echo "Python 3.10 or newer is required." >&2

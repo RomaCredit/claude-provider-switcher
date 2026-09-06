@@ -4,7 +4,8 @@
 editing conversation transcripts. It switches the user-level Claude Code settings
 that control `ANTHROPIC_BASE_URL`, model selection, and authentication, while
 preserving unrelated settings and creating a restore point before every change.
-Switching never hides a conversation; see [Conversation history](#conversation-history).
+History diagnostics and conservative repairs are described in
+[Conversation history](#conversation-history); visibility in every client is not guaranteed.
 
 It is intentionally **not** a Claude Desktop conversation migrator. Claude Code
 settings have multiple sources and precedence levels; managed settings, project
@@ -18,7 +19,7 @@ Python 3.10+ is required. This initial release is available from GitHub;
 **it has not been published to PyPI**. Install with pipx:
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
 ccs --version
 ```
 
@@ -37,7 +38,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.sh | sh
 ccs --version
 ```
 
@@ -45,7 +46,7 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.ps1 | iex
 ```
 
 ## Quick start
@@ -125,7 +126,7 @@ All three presets are ordinary, editable and removable profiles. The optional
 Rerun the new standalone installer above, or update a pipx installation with:
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
 ccs --version
 ccs profile list
 ```
@@ -149,9 +150,9 @@ test` and `ccs run`.
 ## Commands
 
 ```text
-ccs use <name>                         Back up settings, switch, reconcile history records
+ccs use <name>                         Back up settings, switch, check history read-only
 ccs run <name> [-- claude options]     Start one isolated Claude process
-ccs repair-history [--check] [--json]  Reconcile project records without switching
+ccs repair-history [--check | --yes] [--json]
 ccs status [--json]                    Show local settings and credential backend
 ccs doctor [--json]                    Find shell/project/managed conflicts
 ccs profile list
@@ -176,30 +177,56 @@ policy. Restart Claude Code and inspect `/status`.
 
 ## Conversation history
 
-Switching providers never hides a conversation. Claude Code does not record a
-provider on a conversation, so nothing filters history by provider, and this
-tool rewrites `settings.json` only. Transcripts stay in
-`<claude-home>/projects/<encoded-cwd>/<session>.jsonl`, and `ccs run` keeps
-`CLAUDE_CONFIG_DIR` pointed at the same directory, so `ccs run <name> --
---resume` continues a conversation started under any other profile.
+The switcher does not migrate or rewrite transcripts under
+`<claude-home>/projects/`. `ccs run` passes the same `CLAUDE_CONFIG_DIR` and permits
+`--resume` and `--continue`; actual session compatibility and visibility remain
+Claude Code's responsibility. This is not Codex's `model_provider` synchronization.
 
-What can drift is the per-project bookkeeping keyed by the raw working
-directory. On Windows the CLI writes `D:/WorkSpace/app` while the desktop app
-writes `D:\WorkSpace\app`, leaving two records for one folder that split trust
-approval, allowed tools, MCP settings, and prompt recall. `ccs use` reconciles
-those records after switching, and `ccs repair-history` does it on its own:
+Project bookkeeping can contain both `D:/WorkSpace/app` and `D:\WorkSpace\app`
+for one Windows directory. These records may differ in session metadata,
+trust, allowed tools or MCP settings. Since 0.1.4, `ccs use` and menu switching
+only **inspect** these records; no history files are written automatically.
 
 ```text
-ccs repair-history --check          Report duplicates, write nothing, exit 1 if found
-ccs repair-history                  Merge them, after backing both files up
-ccs use <name> --no-repair-history  Switch without reconciling
+ccs repair-history --check --json   Read-only report; creates no files or locks
+ccs repair-history                  Confirm Claude is closed, then repair
+ccs repair-history --yes            Noninteractive confirmation that Claude is closed
+ccs use <name> --no-repair-history  Switch without the read-only history check
 ```
 
-Records are merged, not collapsed: every path form for a folder receives the
-merged payload, with the richest record winning a conflict so a freshly created
-stub cannot reset trust. Both `.claude.json` and `history.jsonl` are copied into
-`backups/history-<id>/` before any write. Prompt records adopt only a spelling
-Claude Code itself already used, and transcripts are never rewritten or deleted.
+Close **all** Claude Code and related desktop sessions before applying a repair.
+Only missing, agreed session bookkeeping (such as `lastSessionId`) can be filled.
+Conflicting values, or missing trust/tool/MCP/unknown settings, leave that entire
+folder and its prompt path labels untouched and produce a conflict report.
+The tool neither unions permissions nor chooses a winner based on record size.
+Resolve those conflicts manually with Claude closed; no values are printed.
+
+For non-conflicting folders, existing path aliases are retained. Prompt labels
+adopt a spelling already present in `history.jsonl`. No prompts are deleted;
+malformed lines, BOM, CRLF/LF endings and a missing final newline are preserved.
+The transcript-directory inventory is advisory, based on a legacy encoding,
+not proof that unmatched directories are invalid or lost.
+
+`--check` exits 1 for pending changes **or conflicts**, and 0 when neither exists,
+even if identical aliases remain. Applying safe changes while conflicts remain
+also exits 1. `pending_changes` describes the analyzed input; `applied` indicates
+whether it was written. Rerun `--check` to inspect the current state.
+
+Both existing source files are backed up byte-for-byte in
+`~/.claude-provider-switcher/backups/history-<id>/`, with private permissions,
+before writing. File identity and contents are checked after staging and before
+each replacement. Concurrent edits, deletion, replacement or linked files abort
+the operation. Partial failures identify already replaced files and the backup;
+there is no automatic rollback that could erase new external writes.
+
+**This is not a multi-file transaction or a lock honored by Claude.** A writer
+can still race after the last check, so `--yes` is an acknowledgement to stop
+Claude, not a force override. Backups named `history-*` are not accepted by
+`ccs backup restore`. To recover manually, close Claude, separately preserve
+the current files, compare the backup's `claude.json` and `history.jsonl` to the
+reported source paths, and restore only the intended files. Backups may contain
+secrets; never post them in an issue. A failed read-only post-switch check is a
+warning and does not undo or misreport a successful provider switch.
 
 ## Configuration safety
 
@@ -207,7 +234,8 @@ Every `use` or restore operation creates a timestamped backup under
 `~/.claude-provider-switcher/backups/`. Updates are atomic and protected by a
 lock. The tool refuses to replace a symlinked `settings.json`, refuses unsafe
 remote HTTP URLs, rejects credentials embedded in URLs, and masks credentials
-from errors. It never reads or modifies conversation history.
+from errors. It never reads or modifies conversation transcripts. Explicit
+history repair can update the project metadata and prompt path labels above.
 
 Persistent `use` installs an `apiKeyHelper` command containing only the Python
 path, helper path, switcher home and profile name. Claude executes it to read the

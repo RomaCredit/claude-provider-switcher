@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 class SwitcherError(Exception):
@@ -76,7 +76,7 @@ def private_file(path: Path) -> None:
         path.chmod(0o600)
 
 
-def atomic_write(path: Path, data: bytes) -> None:
+def atomic_write(path: Path, data: bytes, *, before_replace: Callable[[], None] | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd, temporary = tempfile.mkstemp(prefix=".ccs-", dir=path.parent)
     try:
@@ -85,6 +85,8 @@ def atomic_write(path: Path, data: bytes) -> None:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
+        if before_replace is not None:
+            before_replace()
         os.replace(temporary, path)
     finally:
         if os.path.exists(temporary):

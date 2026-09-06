@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.3
+
+- Add `ccs repair-history`, which merges the per-project records that Windows
+  entry points duplicate under `D:/path` and `D:\path`, splitting trust
+  approval, allowed tools, MCP settings, and prompt recall. Records are
+  mirrored rather than collapsed, the richest record wins a conflict, and both
+  `.claude.json` and `history.jsonl` are backed up before any write.
+- Run that reconciliation after `ccs use`; opt out with `--no-repair-history`.
+- Allow `--resume`, `--continue`, `-c`, and `-r` in `ccs run`. It already
+  pinned `CLAUDE_CONFIG_DIR` to the same session store, so rejecting them only
+  prevented continuing a conversation started under another profile.
+  `--settings`, `--setting-sources`, `--model`, and `--bare` remain rejected.
+- Conversation transcripts are still never read, rewritten, or deleted.
+
 ## 0.1.2
 
 - Add the APIMaster Claude Code preset with the site-root URL, Sonnet model,

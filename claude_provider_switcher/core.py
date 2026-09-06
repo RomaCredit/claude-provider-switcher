@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .credentials import Credentials
+from .history import HistoryRepair
 from .profiles import COMPATIBILITY_ENV, Profile, Profiles, validate_name
 from .storage import SwitcherError, mutation_lock, read_object, write_object
 
@@ -68,6 +69,7 @@ class Switcher:
         self.profiles = Profiles(self.root)
         self.credentials = Credentials(self.root, vault=vault)
         self.backups_dir = self.root / "backups"
+        self.history = HistoryRepair(self.claude_home, self.backups_dir)
 
     def helper_command(self, name: str) -> str:
         validate_name(name)
@@ -137,6 +139,13 @@ class Switcher:
                 raise SwitcherError("Claude settings changed during this operation. Retry after closing Claude Code.")
             write_object(self.settings_path, updated)
         return backup
+
+    def repair_history(self, *, apply: bool = True) -> dict:
+        """Reconcile project records. Switching cannot hide a conversation, but it
+        is the moment a second entry point starts writing them, so 'use' follows
+        a switch with this."""
+        with mutation_lock(self.root), mutation_lock(self.claude_home):
+            return self.history.repair(apply=apply)
 
     def backups(self) -> list[str]:
         return sorted(p.stem for p in self.backups_dir.glob("*.json") if re.fullmatch(r"\d{8}T\d{12}Z-[0-9a-f]{8}", p.stem))
@@ -231,9 +240,11 @@ class Switcher:
 
     def run(self, name: str, arguments: list[str]) -> int:
         profile = self.profiles.get(name)
-        blocked = ("--settings", "--setting-sources", "--model", "--bare", "--resume", "--continue")
-        if any(arg in {"-c", "-r"} or any(arg == flag or arg.startswith(flag + "=") for flag in blocked) for arg in arguments):
-            raise SwitcherError("run does not accept provider/settings overrides or resume flags; use Claude directly for these.")
+        # Resume flags are allowed: CLAUDE_CONFIG_DIR below keeps the session store
+        # identical, so a conversation started under any profile can be continued.
+        blocked = ("--settings", "--setting-sources", "--model", "--bare")
+        if any(any(arg == flag or arg.startswith(flag + "=") for flag in blocked) for arg in arguments):
+            raise SwitcherError("run does not accept provider or settings overrides; these would replace the profile.")
         executable = (shutil.which("claude.exe") or shutil.which("claude.cmd")) if os.name == "nt" else shutil.which("claude")
         if not executable:
             raise SwitcherError("Claude Code is not installed or not on PATH.")

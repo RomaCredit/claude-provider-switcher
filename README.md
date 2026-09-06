@@ -1,9 +1,10 @@
 # Claude Provider Switcher
 
 `claude-provider-switcher` (`ccs`) manages Claude Code provider profiles without
-editing conversation history. It switches the user-level Claude Code settings
+editing conversation transcripts. It switches the user-level Claude Code settings
 that control `ANTHROPIC_BASE_URL`, model selection, and authentication, while
 preserving unrelated settings and creating a restore point before every change.
+Switching never hides a conversation; see [Conversation history](#conversation-history).
 
 It is intentionally **not** a Claude Desktop conversation migrator. Claude Code
 settings have multiple sources and precedence levels; managed settings, project
@@ -17,7 +18,7 @@ Python 3.10+ is required. This initial release is available from GitHub;
 **it has not been published to PyPI**. Install with pipx:
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
 ccs --version
 ```
 
@@ -36,7 +37,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.sh | sh
 ccs --version
 ```
 
@@ -44,7 +45,7 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.ps1 | iex
 ```
 
 ## Quick start
@@ -124,7 +125,7 @@ All three presets are ordinary, editable and removable profiles. The optional
 Rerun the new standalone installer above, or update a pipx installation with:
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
 ccs --version
 ccs profile list
 ```
@@ -148,8 +149,9 @@ test` and `ccs run`.
 ## Commands
 
 ```text
-ccs use <name>                         Back up and update user settings
+ccs use <name>                         Back up settings, switch, reconcile history records
 ccs run <name> [-- claude options]     Start one isolated Claude process
+ccs repair-history [--check] [--json]  Reconcile project records without switching
 ccs status [--json]                    Show local settings and credential backend
 ccs doctor [--json]                    Find shell/project/managed conflicts
 ccs profile list
@@ -171,6 +173,33 @@ features.
 `ccs use official` selects Claude.ai login mode in the user settings, but it
 does not log in, log out, delete OAuth files, or override organization-managed
 policy. Restart Claude Code and inspect `/status`.
+
+## Conversation history
+
+Switching providers never hides a conversation. Claude Code does not record a
+provider on a conversation, so nothing filters history by provider, and this
+tool rewrites `settings.json` only. Transcripts stay in
+`<claude-home>/projects/<encoded-cwd>/<session>.jsonl`, and `ccs run` keeps
+`CLAUDE_CONFIG_DIR` pointed at the same directory, so `ccs run <name> --
+--resume` continues a conversation started under any other profile.
+
+What can drift is the per-project bookkeeping keyed by the raw working
+directory. On Windows the CLI writes `D:/WorkSpace/app` while the desktop app
+writes `D:\WorkSpace\app`, leaving two records for one folder that split trust
+approval, allowed tools, MCP settings, and prompt recall. `ccs use` reconciles
+those records after switching, and `ccs repair-history` does it on its own:
+
+```text
+ccs repair-history --check          Report duplicates, write nothing, exit 1 if found
+ccs repair-history                  Merge them, after backing both files up
+ccs use <name> --no-repair-history  Switch without reconciling
+```
+
+Records are merged, not collapsed: every path form for a folder receives the
+merged payload, with the richest record winning a conflict so a freshly created
+stub cannot reset trust. Both `.claude.json` and `history.jsonl` are copied into
+`backups/history-<id>/` before any write. Prompt records adopt only a spelling
+Claude Code itself already used, and transcripts are never rewritten or deleted.
 
 ## Configuration safety
 

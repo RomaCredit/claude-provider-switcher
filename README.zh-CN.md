@@ -4,7 +4,8 @@
 配置。它会切换 `ANTHROPIC_BASE_URL`、模型和认证方式，切换前自动备份用户级
 settings，同时保留权限、hooks 等无关设置。
 
-它**不是** Claude Desktop 对话迁移工具，也不会改动 Claude Code 的会话历史。
+它**不是** Claude Desktop 对话迁移工具，也不会改动 Claude Code 的会话转录文件；
+切换 provider 不会隐藏任何会话，详见[会话历史](#会话历史)。
 Claude Code 的最终配置还会受到环境变量、项目 settings、命令行参数和组织托管
 策略影响，因此每次切换后都应执行 `ccs doctor`，并在 Claude Code 中查看
 `/status`。
@@ -15,7 +16,7 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 已有 pipx 的环境可以直接安装：
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
 ccs --version
 ```
 
@@ -34,7 +35,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.sh | sh
 ccs --version
 ```
 
@@ -42,7 +43,7 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.3/install.ps1 | iex
 ```
 
 ## 快速开始
@@ -105,11 +106,11 @@ Claude Code 使用的是根地址，**不能照搬 Codex 预设的 `/v1` 后缀*
 
 ### 从旧版升级
 
-使用安装脚本的用户重新运行上方 `v0.1.2` 安装命令即可。
+使用安装脚本的用户重新运行上方 `v0.1.3` 安装命令即可。
 通过 pipx 安装的用户执行：
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.3.zip
 ccs --version
 ccs profile list
 ```
@@ -129,8 +130,9 @@ API profile 的地址必须提供 Anthropic Messages API，即 Claude Code 使�
 ## 命令
 
 ```text
-ccs use <name>                         备份并更新用户 settings
+ccs use <name>                         备份并更新用户 settings，随后校正历史记录
 ccs run <name> [-- claude 参数]       以隔离配置启动一次 Claude
+ccs repair-history [--check] [--json]  只校正项目记录，不切换 profile
 ccs status [--json]                    显示本地配置和凭据后端
 ccs doctor [--json]                    检查 shell、项目和托管配置冲突
 ccs profile list
@@ -150,6 +152,30 @@ ccs backup restore <id> --yes
 `ccs use official` 只把用户 settings 切换到 Claude.ai 登录模式，不会自动登录、
 注销、删除 OAuth 文件，也不会绕过组织策略。切换后重启 Claude Code 并查看
 `/status`。
+
+## 会话历史
+
+切换 provider 不会隐藏任何会话。Claude Code 不在会话上记录 provider，因此没有
+任何按 provider 过滤历史的机制，而本工具只改写 `settings.json`。转录文件始终位于
+`<claude-home>/projects/<编码后的工作目录>/<session>.jsonl`；`ccs run` 会把
+`CLAUDE_CONFIG_DIR` 指向同一目录，所以 `ccs run <name> -- --resume` 可以继续在
+任何其他 profile 下开始的会话。
+
+真正会分裂的是按原始工作目录字符串索引的项目记录。Windows 上 CLI 写入
+`D:/WorkSpace/app`，桌面端写入 `D:\WorkSpace\app`，同一个目录留下两条记录，
+导致信任状态、已授权工具、MCP 配置和历史提示补全被拆开。`ccs use` 在切换后会
+自动校正这些记录，`ccs repair-history` 也可以单独执行：
+
+```text
+ccs repair-history --check          只报告重复项，不写入；发现问题返回 1
+ccs repair-history                  备份两个文件后合并
+ccs use <name> --no-repair-history  只切换，不校正
+```
+
+合并采用镜像而非收敛：同一目录的每种路径写法都会写入合并后的内容，冲突时以
+字段更完整的那条为准，这样桌面端刚创建的空壳记录不会把信任状态重置掉。写入前
+`.claude.json` 和 `history.jsonl` 都会复制到 `backups/history-<id>/`。历史提示
+只会改成 Claude Code 自己用过的写法，转录文件永远不被改写或删除。
 
 ## 安全机制
 

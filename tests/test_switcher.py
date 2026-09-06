@@ -358,9 +358,17 @@ class SettingsTests(Fixture):
         with patch("shutil.which", return_value="claude"), patch("subprocess.call", return_value=0) as call, patch.dict(os.environ, {"ANTHROPIC_AUTH_TOKEN": SECRET}):
             self.switcher.run("official", ["--version"])
             self.assertNotIn("ANTHROPIC_AUTH_TOKEN", call.call_args.kwargs["env"])
-        for argument in ("--settings=secret.json", "--model", "--bare", "--resume"):
+        for argument in ("--settings=secret.json", "--setting-sources=user", "--model", "--bare"):
             with self.assertRaises(SwitcherError):
                 self.switcher.run("official", [argument])
+
+    def test_run_forwards_resume_flags_to_the_shared_session_store(self):
+        self.switcher.profiles.load()
+        for argument in ("--resume", "--continue", "-c", "-r"):
+            with patch("shutil.which", return_value="claude"), patch("subprocess.call", return_value=0) as call:
+                self.switcher.run("official", [argument])
+            self.assertIn(argument, call.call_args.args[0])
+            self.assertEqual(call.call_args.kwargs["env"]["CLAUDE_CONFIG_DIR"], str(self.switcher.claude_home))
 
 
 class CliTests(Fixture):

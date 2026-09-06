@@ -35,6 +35,10 @@ def parser() -> argparse.ArgumentParser:
     doctor.add_argument("--json", action="store_true")
     use = commands.add_parser("use", help="Back up and update Claude user settings")
     use.add_argument("name")
+    use.add_argument("--no-repair-history", action="store_true", help="Skip the project record reconciliation that normally follows a switch")
+    repair = commands.add_parser("repair-history", help="Reconcile duplicated project records without switching profile")
+    repair.add_argument("--check", action="store_true", help="Report only; write nothing")
+    repair.add_argument("--json", action="store_true")
     run = commands.add_parser("run", help="Start Claude with isolated provider settings for one process")
     run.add_argument("name")
     run.add_argument("args", nargs=argparse.REMAINDER, help="Claude flags after --")
@@ -88,7 +92,22 @@ def confirm(message: str, yes: bool) -> None:
         raise SwitcherError("Operation cancelled. Use --yes for a deliberate noninteractive operation.")
 
 
-def switch_message(switcher: Switcher, name: str):
+def history_message(report: dict) -> None:
+    if report["duplicate_folders"]:
+        verb, tense = ("merged", "updated") if report["applied"] else ("would merge", "to update")
+        print(
+            f"History: {verb} {report['duplicate_folders']} folder(s) recorded under several path forms; "
+            f"{report['project_entries_updated']} project entr(ies) and "
+            f"{report['history_entries_normalized']} prompt record(s) {tense}."
+        )
+    else:
+        print("History: project records are consistent; nothing to reconcile.")
+    if report["backup"]:
+        print(f"History backup: {report['backup']}")
+    print("Conversations are kept per working directory and are not filtered by provider, so switching never hides them.")
+
+
+def switch_message(switcher: Switcher, name: str, repair_history: bool = True):
     profile = switcher.profiles.get(name)
     if profile.type == "api" and not switcher.credentials.get(name) and sys.stdin.isatty():
         secret = read_secret(False)
@@ -100,11 +119,22 @@ def switch_message(switcher: Switcher, name: str):
     print(f"Backup: {backup}")
     print("Restart Claude Code. This updated user settings only; shell, project or managed overrides may still apply.")
     print("Check 'ccs doctor' and Claude's /status. Subscription login is not performed by this tool.")
+    if repair_history:
+        history_message(switcher.repair_history())
 
 
 def execute(args, switcher: Switcher) -> int:
     if args.command == "use":
-        switch_message(switcher, args.name)
+        switch_message(switcher, args.name, not args.no_repair_history)
+    elif args.command == "repair-history":
+        report = switcher.repair_history(apply=not args.check)
+        if args.json:
+            print(json.dumps(report, ensure_ascii=True, indent=2))
+        else:
+            for key, value in report.items():
+                print(f"{key}: {', '.join(value) if isinstance(value, list) else value}")
+            history_message(report)
+        return 1 if args.check and report["duplicate_folders"] else 0
     elif args.command in {None, "status"}:
         status = switcher.status()
         if getattr(args, "json", False):
@@ -230,7 +260,7 @@ def menu(cli, switcher: Switcher):
         return names[index - 1]
 
     while True:
-        print("\n1. Switch provider\n2. Show status\n3. Test provider connectivity\n4. Manage profiles\n5. Diagnose configuration\n6. Restore settings\n0. Exit")
+        print("\n1. Switch provider\n2. Show status\n3. Test provider connectivity\n4. Manage profiles\n5. Diagnose configuration\n6. Restore settings\n7. Reconcile history records\n0. Exit")
         try:
             choice = input("Choose: ").strip()
             if choice == "0":
@@ -265,6 +295,8 @@ def menu(cli, switcher: Switcher):
             elif choice == "6":
                 execute(cli.parse_args(["backup", "list"]), switcher)
                 execute(cli.parse_args(["backup", "restore", input("Backup ID: ").strip()]), switcher)
+            elif choice == "7":
+                execute(cli.parse_args(["repair-history"]), switcher)
             else:
                 print("Invalid selection.")
         except (EOFError, KeyboardInterrupt):

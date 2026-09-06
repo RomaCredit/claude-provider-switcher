@@ -33,6 +33,22 @@ Anthropic product.
 
 ## Install
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew tap RomaCredit/codex
+brew install RomaCredit/codex/claude-provider-switcher
+ccs --version
+```
+
+The shared tap keeps its existing name but installs this tool independently
+from Codex Provider Switcher. Both formulas are
+[installation-tested on macOS and Linux](https://github.com/RomaCredit/homebrew-codex/actions/workflows/test.yml).
+If your Homebrew requires tap trust, inspect the formula first and trust only
+this formula with `brew trust --formula RomaCredit/codex/claude-provider-switcher`.
+
+### pipx and standalone installers
+
 Python 3.10+ is required. Released source is available from GitHub;
 **it has not been published to PyPI**. Install with pipx:
 

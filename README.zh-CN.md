@@ -26,6 +26,21 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 
 ## 安装
 
+### Homebrew（macOS / Linux）
+
+```bash
+brew tap RomaCredit/codex
+brew install RomaCredit/codex/claude-provider-switcher
+ccs --version
+```
+
+沿用现有 tap 名称，但两个工具独立安装，不要求先安装 Codex 切换器。
+配方有 [macOS/Linux 安装测试](https://github.com/RomaCredit/homebrew-codex/actions/workflows/test.yml)。
+新版 Homebrew 如要求信任 tap，先检查配方，再仅授权该配方：
+`brew trust --formula RomaCredit/codex/claude-provider-switcher`。
+
+### pipx 与独立安装器
+
 要求 Python 3.10+。当前从 GitHub 分发，**尚未发布到 PyPI**。
 已有 pipx 的环境可以直接安装：
 

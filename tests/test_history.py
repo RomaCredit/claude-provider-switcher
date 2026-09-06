@@ -23,7 +23,7 @@ class HistoryFixture(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.base = Path(self.tmp.name)
+        self.base = Path(self.tmp.name).resolve()
         self.switcher = Switcher(self.base / "switcher", self.base / "claude")
         self.config = self.base / "claude.json"
         self.switcher.history._config_path = self.config

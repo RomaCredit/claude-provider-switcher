@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.5
+
+- Make the overview and quick start provider-neutral while retaining the
+  configured APIMaster preset and its one-time credential prompt.
+- Add bilingual navigation, troubleshooting, verified scope, contribution
+  guidance, issue forms, citation metadata, and package discovery keywords.
+- Prepare tag-based PyPI trusted publishing gated by a cross-platform test matrix.
+  PyPI publication requires a separate project-level Trusted Publisher.
+- Provider switching, credentials, and conservative history behavior are unchanged.
+
 ## 0.1.4
 
 - Make the post-switch history check read-only. Explicit repair now requires

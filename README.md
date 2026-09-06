@@ -1,9 +1,18 @@
-# Claude Provider Switcher
+# Claude Provider Switcher: switch Claude Code API profiles safely
 
-`claude-provider-switcher` (`ccs`) manages Claude Code provider profiles without
-editing conversation transcripts. It switches the user-level Claude Code settings
-that control `ANTHROPIC_BASE_URL`, model selection, and authentication, while
-preserving unrelated settings and creating a restore point before every change.
+[![Tests](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml/badge.svg)](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/RomaCredit/claude-provider-switcher/blob/main/LICENSE)
+
+[中文文档](https://github.com/RomaCredit/claude-provider-switcher/blob/main/README.zh-CN.md) |
+[Releases](https://github.com/RomaCredit/claude-provider-switcher/releases) |
+[Changelog](https://github.com/RomaCredit/claude-provider-switcher/blob/main/CHANGELOG.md)
+
+Switch Claude Code between Claude.ai subscription login, Anthropic's API, and
+Anthropic-compatible gateways without repeatedly editing `ANTHROPIC_BASE_URL`,
+models, and authentication. `claude-provider-switcher` (`ccs`) manages named
+profiles, stores credentials privately, and backs up settings before changes.
+It preserves unrelated user settings and does not edit conversation transcripts.
 History diagnostics and conservative repairs are described in
 [Conversation history](#conversation-history); visibility in every client is not guaranteed.
 
@@ -13,13 +22,22 @@ settings, shell variables, CLI flags, and a running session can still override
 the user settings. Use `ccs doctor` and Claude Code `/status` to verify the
 effective configuration.
 
+## Is this for you?
+
+Use it for repeatable Claude Code provider switches, private credentials,
+settings backups, and conservative project-history diagnostics. It does not
+migrate Claude Desktop cloud conversations, translate an OpenAI-only API,
+increase subscription quotas, or bypass organization policy. Third-party APIs
+have separate billing. This is an independent community project, not an
+Anthropic product.
+
 ## Install
 
-Python 3.10+ is required. This initial release is available from GitHub;
+Python 3.10+ is required. Released source is available from GitHub;
 **it has not been published to PyPI**. Install with pipx:
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
 ccs --version
 ```
 
@@ -38,7 +56,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.sh | sh
 ccs --version
 ```
 
@@ -46,22 +64,30 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.ps1 | iex
 ```
 
 ## Quick start
 
-APIMaster is preconfigured using its
-[Claude Code setup guide](https://apimaster.ai/docs/en/cli/claude-code):
+Choose a profile, switch, then inspect the effective configuration:
 
 ```bash
-ccs use apimaster
+ccs profile list
+ccs use anthropic
+ccs status
+ccs doctor
+ccs use official
 ```
 
-The first interactive switch asks only for your API key, with input hidden.
-Subsequent switches reuse the saved credential. `ccs` -> **Switch provider**
-offers the same flow. The preset contains the endpoint, model, authentication
-kind and compatibility options, not a shared or bundled API key.
+The first interactive switch to an API profile asks only for your API key,
+with input hidden; later switches reuse the saved credential. `ccs` opens the
+same flow in a menu. Restart Claude Code and check `/status`; subscription
+login must already be available or completed in Claude Code.
+
+APIMaster is another editable preset: `ccs use apimaster` provides the same
+one-time key prompt. Its endpoint and compatibility options follow its
+[Claude Code setup guide](https://apimaster.ai/docs/en/cli/claude-code).
+No profile bundles a shared or free API key.
 
 For another Anthropic-compatible provider:
 
@@ -126,7 +152,7 @@ All three presets are ordinary, editable and removable profiles. The optional
 Rerun the new standalone installer above, or update a pipx installation with:
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
 ccs --version
 ccs profile list
 ```
@@ -263,6 +289,34 @@ provider probes. Installers fetch releases; `ccs run` starts Claude Code, whose
 network behavior and data policies are separate. No actual subscription login or
 third-party model compatibility is guaranteed by local tests.
 
+## Troubleshooting
+
+### Claude Code still uses the old ANTHROPIC_BASE_URL after switching
+
+Run `ccs doctor`, restart Claude Code, and inspect `/status`. Shell variables,
+project settings, CLI flags, or managed policy may override user settings.
+`ccs run <profile>` provides an isolated launch for supported local settings;
+it is not a policy bypass.
+
+### Can I continue a Claude Code conversation after switching providers?
+
+The switcher leaves transcripts in place. Resume with Claude Code's
+`--resume` or `--continue` using the same project and `CLAUDE_CONFIG_DIR`.
+Actual visibility and provider compatibility remain Claude Code's responsibility.
+Use `ccs repair-history --check` for project metadata diagnostics, not transcript
+recovery. See [Conversation history](#conversation-history) before any repair.
+
+### Does a successful provider test prove the gateway works with Claude Code?
+
+No. `/v1/models` only tests that endpoint and authentication. Messages,
+streaming, tools, and model aliases need separate verification. `--inference`
+is an explicit, potentially billable test, never part of the default probe.
+
+### Why does pip report externally-managed-environment on Ubuntu?
+
+This is system Python's PEP 668 protection. Use pipx, a virtual environment,
+or the standalone installer above; do not use `--break-system-packages`.
+
 ## Development
 
 ```bash
@@ -280,6 +334,19 @@ Release tags additionally exercise online installation on all three platforms.
 
 Reference: [Claude Code gateway configuration](https://code.claude.com/docs/en/llm-gateway-connect).
 
+The CI matrix covers Windows, macOS, and Linux with Python 3.10 and 3.13.
+It is evidence for these local operations, not certification of every Claude
+Code version or live gateway.
+
+For **Codex Desktop**, see
+[Codex Provider Switcher](https://github.com/RomaCredit/codex-provider-switcher).
+Its provider-index synchronization is different from Claude's project-record
+repair. The tools do not share credentials or migrate each other's sessions.
+
+[Contributing](https://github.com/RomaCredit/claude-provider-switcher/blob/main/CONTRIBUTING.md) |
+[Report an issue](https://github.com/RomaCredit/claude-provider-switcher/issues/new/choose) |
+[Security](https://github.com/RomaCredit/claude-provider-switcher/blob/main/SECURITY.md)
+
 ## License
 
-MIT
+MIT. See [LICENSE](https://github.com/RomaCredit/claude-provider-switcher/blob/main/LICENSE).

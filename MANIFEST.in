@@ -7,3 +7,5 @@ include SECURITY.md
 include RELEASE.md
 include claude-provider-menu.bat
 include claude-provider-menu.command
+include CITATION.cff CONTRIBUTING.md SECURITY.md RELEASE.md CHANGELOG.md
+recursive-include .github *.yml

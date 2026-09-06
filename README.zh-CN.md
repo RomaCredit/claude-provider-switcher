@@ -1,4 +1,11 @@
-# Claude Provider Switcher
+# Claude Provider Switcher：管理 Claude Code 的 API 与订阅切换
+
+[![测试](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml/badge.svg)](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+
+[English](https://github.com/RomaCredit/claude-provider-switcher/blob/main/README.md) |
+[版本发布](https://github.com/RomaCredit/claude-provider-switcher/releases) |
+[更新记录](https://github.com/RomaCredit/claude-provider-switcher/blob/main/CHANGELOG.md)
 
 `claude-provider-switcher`（命令简称 `ccs`）用于管理 Claude Code 的 provider
 配置。它会切换 `ANTHROPIC_BASE_URL`、模型和认证方式，切换前自动备份用户级
@@ -10,13 +17,20 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 策略影响，因此每次切换后都应执行 `ccs doctor`，并在 Claude Code 中查看
 `/status`。
 
+## 适用范围
+
+需要在 Claude.ai 订阅、Anthropic API 和兼容网关之间反复切换，或希望集中管理
+密钥、保留设置备份、排查重复项目记录时，可以使用本工具。
+它不迁移 Claude Desktop 云端对话，不转换 OpenAI-only 协议，不增加订阅额度，
+也不绕过组织策略。第三方 API 独立计费。本项目是社区工具，与 Anthropic 无官方隶属关系。
+
 ## 安装
 
-要求 Python 3.10+。首版从 GitHub 分发，**尚未发布到 PyPI**。
+要求 Python 3.10+。当前从 GitHub 分发，**尚未发布到 PyPI**。
 已有 pipx 的环境可以直接安装：
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
 ccs --version
 ```
 
@@ -35,7 +49,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.sh | sh
 ccs --version
 ```
 
@@ -43,21 +57,28 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.4/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.ps1 | iex
 ```
 
 ## 快速开始
 
-使用 APIMaster 时，地址、模型、认证方式和兼容选项已经按其
-[Claude Code 文档](https://apimaster.ai/docs/en/cli/claude-code) 预填：
+先查看 profile，再选择订阅或 API。以下命令分别演示查看、切换与诊断：
 
 ```bash
-ccs use apimaster
+ccs profile list
+ccs use anthropic
+ccs status
+ccs doctor
+ccs use official
 ```
 
-第一次只需隐藏输入自己的 API key，以后切换会复用已保存的密钥。
-直接运行 `ccs`，在 **Switch provider** 中选择 `apimaster` 也是同样的流程。
-“预配置”不包含共享 API key，也不会从 Codex 配置中擅自复制凭据。
+首次切换到 API profile 时隐藏输入自己的 key，以后复用已保存的密钥。
+直接运行 `ccs` 可从菜单选择。切换后重启 Claude Code 并查看 `/status`；
+订阅登录仍由 Claude Code 完成，不会由切换器代办。
+
+APIMaster 也是可编辑的普通预设，运行 `ccs use apimaster` 同样只需首次输入 key。
+地址和兼容选项按其 [Claude Code 文档](https://apimaster.ai/docs/en/cli/claude-code)
+预填，不包含共享密钥，也不会复制 Codex 的凭据。
 
 其他 Anthropic 兼容服务可以自行添加：
 
@@ -106,11 +127,11 @@ Claude Code 使用的是根地址，**不能照搬 Codex 预设的 `/v1` 后缀*
 
 ### 从旧版升级
 
-使用安装脚本的用户重新运行上方 `v0.1.4` 安装命令即可。
+使用安装脚本的用户重新运行上方 `v0.1.5` 安装命令即可。
 通过 pipx 安装的用户执行：
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.4.zip
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
 ccs --version
 ccs profile list
 ```
@@ -223,6 +244,31 @@ MCP、未知配置字段，该目录的全部项目记录和历史提示路径�
 切换器不收集遥测，仅在用户主动执行 probe 时请求配置的 provider。安装器会下载
 发布文件，`ccs run` 启动的 Claude Code 自身网络行为不受本项目的无遥测承诺覆盖。
 
+## 常见问题
+
+### 切换后为什么还在使用旧的 ANTHROPIC_BASE_URL？
+
+先运行 `ccs doctor`，重启 Claude Code 后查看 `/status`。shell 环境变量、
+项目配置、启动参数和组织策略都可能覆盖用户设置。需要一次性隔离启动时可用
+`ccs run <profile>`，但这不绕过组织策略。
+
+### 更换 provider 后，还能继续原来的 Claude Code 会话吗？
+
+切换器不动会话转录。保持相同项目与 `CLAUDE_CONFIG_DIR`，通过 Claude Code 的
+`--resume` 或 `--continue` 恢复；实际兼容性由客户端决定。
+`ccs repair-history --check` 仅诊断项目元数据，不恢复被删除的转录。
+实际修复前务必阅读上面的“会话历史”说明。
+
+### 探测通过就代表 Claude Code 的全部功能可用吗？
+
+不是。`/v1/models` 仅验证该接口与认证；Messages、流式输出、工具调用和模型别名
+需要单独确认。`--inference` 可能产生费用，不是默认探测的一部分。
+
+### Ubuntu 提示 externally-managed-environment 怎么办？
+
+这是 PEP 668 对系统 Python 的保护。使用 pipx、虚拟环境或上面的独立安装器，
+不要用 `--break-system-packages` 破坏系统包管理边界。
+
 ## 开发与测试
 
 ```bash
@@ -236,6 +282,17 @@ python -m unittest discover -s tests -v
 Windows 测试会用临时凭据验证 Credential Manager；macOS CI 设置
 `CCS_TEST_NATIVE_KEYCHAIN=1` 验证 Keychain。发布标签还会触发三个平台的在线安装测试。
 
+CI 覆盖 Windows、macOS、Linux 的 Python 3.10 和 3.13，不能据此承诺
+所有 Claude Code 版本或真实网关都已经验证。
+
+Codex Desktop 用户请看
+[Codex Provider Switcher](https://github.com/RomaCredit/codex-provider-switcher)。
+两者历史机制和协议不同，不共享密钥，也不相互迁移会话。
+
+[贡献指南](https://github.com/RomaCredit/claude-provider-switcher/blob/main/CONTRIBUTING.md) |
+[提交问题](https://github.com/RomaCredit/claude-provider-switcher/issues/new/choose) |
+[安全说明](https://github.com/RomaCredit/claude-provider-switcher/blob/main/SECURITY.md)
+
 ## 许可证
 
-MIT
+MIT，见 [LICENSE](https://github.com/RomaCredit/claude-provider-switcher/blob/main/LICENSE)。

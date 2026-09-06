@@ -1,0 +1,27 @@
+name: Project history diagnostics
+description: Report a reproducible Claude Code project metadata issue.
+title: "[History] "
+labels: ["history"]
+body:
+  - type: markdown
+    attributes:
+      value: "Never attach claude.json, history.jsonl, transcripts, backups, OAuth data, or credentials."
+  - type: input
+    id: versions
+    attributes:
+      label: Switcher, Claude Code, and OS versions
+    validations:
+      required: true
+  - type: textarea
+    id: symptoms
+    attributes:
+      label: Symptoms and reproducible steps
+      description: "State whether the issue is a project metadata conflict or a transcript visibility issue."
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized check or repair output
+    validations:
+      required: true

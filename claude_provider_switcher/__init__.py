@@ -1,3 +1,3 @@
 """Independent Claude Code configuration tooling."""
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

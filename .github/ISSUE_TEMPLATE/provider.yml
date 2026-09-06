@@ -1,0 +1,34 @@
+name: Provider compatibility
+description: Report an Anthropic Messages gateway compatibility result.
+title: "[Provider] "
+labels: ["provider-compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include API keys or billable inference request/response content."
+  - type: input
+    id: versions
+    attributes:
+      label: Switcher and Claude Code versions
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider and protocol
+      placeholder: "Anthropic Messages API gateway"
+    validations:
+      required: true
+  - type: textarea
+    id: profile
+    attributes:
+      label: Sanitized profile fields
+      description: "Include base_url host/path, model, and auth_kind. Redact tokens."
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Command, probe result, and expected behavior
+    validations:
+      required: true

@@ -1,6 +1,7 @@
 # Claude Provider Switcher: switch Claude Code API profiles safely
 
 [![Tests](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml/badge.svg)](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/claude-provider-switcher)](https://pypi.org/project/claude-provider-switcher/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/RomaCredit/claude-provider-switcher/blob/main/LICENSE)
 
@@ -33,6 +34,29 @@ Anthropic product.
 
 ## Install
 
+### PyPI / pipx
+
+Python 3.10+ is required. The package is
+[published on PyPI](https://pypi.org/project/claude-provider-switcher/).
+For an isolated CLI installation:
+
+```bash
+pipx install claude-provider-switcher
+ccs --version
+```
+
+In an activated virtual environment or another pip-managed Python environment:
+
+```bash
+python -m pip install --upgrade claude-provider-switcher
+ccs --version
+```
+
+Ubuntu/Debian may reject system `pip` with `externally-managed-environment`
+(PEP 668). Use pipx, a virtual environment, Homebrew, or the standalone installer
+below; do not use `--break-system-packages`. Installation does not switch
+providers or modify Claude settings.
+
 ### Homebrew (macOS / Linux)
 
 ```bash
@@ -47,13 +71,12 @@ from Codex Provider Switcher. Both formulas are
 If your Homebrew requires tap trust, inspect the formula first and trust only
 this formula with `brew trust --formula RomaCredit/codex/claude-provider-switcher`.
 
-### pipx and standalone installers
+### Versioned source and standalone installers
 
-Python 3.10+ is required. Released source is available from GitHub;
-**it has not been published to PyPI**. Install with pipx:
+For a specific GitHub release:
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.6.zip
 ccs --version
 ```
 
@@ -72,7 +95,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.6/install.sh | sh
 ccs --version
 ```
 
@@ -80,7 +103,7 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.6/install.ps1 | iex
 ```
 
 ## Quick start
@@ -165,13 +188,18 @@ All three presets are ordinary, editable and removable profiles. The optional
 
 ### Upgrading from 0.1.0 or 0.1.1
 
-Rerun the new standalone installer above, or update a pipx installation with:
+Rerun the new standalone installer above. For a PyPI-based pipx installation:
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
+pipx upgrade claude-provider-switcher
 ccs --version
 ccs profile list
 ```
+
+To move an existing GitHub-URL pipx installation to PyPI, run
+`pipx install --force claude-provider-switcher` once. This changes the installed
+package source, not your profiles or credentials. Run `ccs use <profile>` again
+if the installation path changes, so the credential helper points to that path.
 
 The first profile load migrates `profiles.json` from schema 1 to schema 2 and
 adds only missing newly introduced presets. It first saves the original bytes

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-provider-switcher"
-version = "0.1.5"
+version = "0.1.6"
 description = "Switch Claude Code API profiles with private credentials, settings backups, and history diagnostics."
 readme = "README.md"
 requires-python = ">=3.10"

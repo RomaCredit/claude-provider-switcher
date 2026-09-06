@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.6
+
+- Update both READMEs and the packaged PyPI description after successful
+  Trusted Publishing of 0.1.5; add package-name pip/pipx installation and a PyPI badge.
+- Document upgrades and migration from GitHub-URL pipx installs while retaining
+  versioned source and standalone installation options.
+- Mark the first-publication authorization task complete and retain setup
+  instructions for future maintainer changes.
+- Add a regression check for published-package installation documentation.
+- No provider, credential, configuration schema, or history behavior changes.
+
 ## 0.1.5
 
 - Make the overview and quick start provider-neutral while retaining the

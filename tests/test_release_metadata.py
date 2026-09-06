@@ -10,6 +10,20 @@ REPOSITORY = "https://github.com/RomaCredit/claude-provider-switcher"
 
 
 class ReleaseMetadataTests(unittest.TestCase):
+    def test_published_package_installation_documentation(self):
+        for name in ("README.md", "README.zh-CN.md"):
+            with self.subTest(name=name):
+                text = (ROOT / name).read_text(encoding="utf-8")
+                self.assertIn("https://pypi.org/project/claude-provider-switcher/", text)
+                self.assertIn("https://img.shields.io/pypi/v/claude-provider-switcher", text)
+                self.assertIn("pipx install claude-provider-switcher", text)
+                self.assertIn("python -m pip install --upgrade claude-provider-switcher", text)
+                self.assertIn("pipx upgrade claude-provider-switcher", text)
+                self.assertIn("pipx install --force claude-provider-switcher", text)
+                self.assertIn("externally-managed-environment", text)
+                self.assertNotIn("has not been published to PyPI", text)
+                self.assertNotIn("\u5c1a\u672a\u53d1\u5e03\u5230 PyPI", text)
+
     def test_versioned_documentation_and_installers(self):
         for name in ("README.md", "README.zh-CN.md"):
             text = (ROOT / name).read_text(encoding="utf-8")

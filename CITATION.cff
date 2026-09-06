@@ -4,7 +4,7 @@ type: software
 title: Claude Provider Switcher
 authors:
   - name: RomaCredit
-version: 0.1.5
+version: 0.1.6
 repository-code: "https://github.com/RomaCredit/claude-provider-switcher"
 license: MIT
 keywords:

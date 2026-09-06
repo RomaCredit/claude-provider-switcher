@@ -5,7 +5,7 @@
 2. Run `python -m unittest discover -s tests -v` and the cross-platform matrix.
 3. Build with `python -m build` and validate with `python -m twine check dist/*`.
    Use a clean output directory for every version.
-4. Push reviewed main, configure the Trusted Publisher below, and push `v0.1.5`.
+4. Push reviewed main, verify the Trusted Publisher below, and push `v0.1.6`.
 5. The tag workflow tests all three OSes on Python 3.10/3.13 before OIDC upload.
 6. Confirm PyPI actually lists the version before advertising package-name installs.
    Verify both `ccs` and `claude-provider-switcher` in a clean environment.
@@ -13,10 +13,14 @@
 8. Update the Homebrew formula from the downloaded archive's SHA256, not the
    commit SHA. Validate installation and `brew test` on macOS/Linux.
 
-## First PyPI publication
+## PyPI Trusted Publisher
 
-The account holder must sign in to
-[PyPI publishing](https://pypi.org/manage/account/publishing/) and add a pending publisher:
+The initial publication succeeded for 0.1.5 after the account holder configured
+the pending publisher and reran the upload. Routine releases use the existing
+project publisher; do not create a new pending project for each version.
+
+When changing maintainer setup, the account holder can review the publisher at
+[PyPI publishing](https://pypi.org/manage/account/publishing/). The binding is:
 
 | Field | Value |
 | --- | --- |

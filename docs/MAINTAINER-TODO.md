@@ -2,19 +2,18 @@
 
 Status checked on 2026-09-06. These are not runtime requirements.
 
-## Authorize PyPI
+## PyPI authorization: completed
 
-The v0.1.5 build and test jobs passed, but upload failed with
-`invalid-publisher`: PyPI has no matching Trusted Publisher. This is not a
-package test failure. See [RELEASE.md](../RELEASE.md) for the exact five fields.
+The account holder configured the Trusted Publisher and the v0.1.5 upload
+succeeded on retry:
+https://github.com/RomaCredit/claude-provider-switcher/actions/runs/34030865108
 
-1. Sign in at https://pypi.org/manage/account/publishing/.
-2. Add pending project `claude-provider-switcher`, owner `RomaCredit`,
-   repository `claude-provider-switcher`, workflow `publish.yml`, environment `pypi`.
-3. Open https://github.com/RomaCredit/claude-provider-switcher/actions/runs/34030865108
-   and rerun failed jobs. Do not replace the tag.
-4. Confirm version 0.1.5 on PyPI and test a fresh package-name installation.
-5. Only then replace the GitHub-only installation notice and add a PyPI badge.
+PyPI now distributes the package at
+https://pypi.org/project/claude-provider-switcher/.
+The 0.1.6 documentation release removes the old unpublished notice from package
+metadata and adds pip/pipx installation instructions and badges. See
+[RELEASE.md](../RELEASE.md) for future releases; no new authorization is required
+while the publisher binding remains unchanged.
 
 ## Social preview
 

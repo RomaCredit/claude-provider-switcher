@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^v[0-9]+\.[0-9]+\.[0-9]+$')]
-    [string]$Version = 'v0.1.5',
+    [string]$Version = 'v0.1.6',
     [string]$InstallDirectory,
     [switch]$NoPipx
 )

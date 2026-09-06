@@ -1,6 +1,7 @@
 # Claude Provider Switcher：管理 Claude Code 的 API 与订阅切换
 
 [![测试](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml/badge.svg)](https://github.com/RomaCredit/claude-provider-switcher/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/claude-provider-switcher)](https://pypi.org/project/claude-provider-switcher/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 
 [English](https://github.com/RomaCredit/claude-provider-switcher/blob/main/README.md) |
@@ -26,6 +27,27 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 
 ## 安装
 
+### PyPI / pipx
+
+要求 Python 3.10+。项目已[发布到 PyPI](https://pypi.org/project/claude-provider-switcher/)，
+可以直接按包名安装。CLI 工具可用 pipx 安装到独立环境：
+
+```bash
+pipx install claude-provider-switcher
+ccs --version
+```
+
+在已激活的虚拟环境或允许 pip 管理的 Python 环境中，也支持：
+
+```bash
+python -m pip install --upgrade claude-provider-switcher
+ccs --version
+```
+
+Ubuntu/Debian 的 `externally-managed-environment` 是 PEP 668 系统保护，
+并非包不支持 Linux。请使用 pipx、虚拟环境、Homebrew 或下面的独立安装器，
+不要使用 `--break-system-packages`。安装本身不会切换 provider 或修改 Claude 设置。
+
 ### Homebrew（macOS / Linux）
 
 ```bash
@@ -39,13 +61,12 @@ ccs --version
 新版 Homebrew 如要求信任 tap，先检查配方，再仅授权该配方：
 `brew trust --formula RomaCredit/codex/claude-provider-switcher`。
 
-### pipx 与独立安装器
+### 固定版本源码与独立安装器
 
-要求 Python 3.10+。当前从 GitHub 分发，**尚未发布到 PyPI**。
-已有 pipx 的环境可以直接安装：
+需要安装固定 GitHub 版本时：
 
 ```bash
-pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.6.zip
 ccs --version
 ```
 
@@ -64,7 +85,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.6/install.sh | sh
 ccs --version
 ```
 
@@ -72,7 +93,7 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.5/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.6/install.ps1 | iex
 ```
 
 ## 快速开始
@@ -142,14 +163,19 @@ Claude Code 使用的是根地址，**不能照搬 Codex 预设的 `/v1` 后缀*
 
 ### 从旧版升级
 
-使用安装脚本的用户重新运行上方 `v0.1.5` 安装命令即可。
-通过 pipx 安装的用户执行：
+使用安装脚本的用户重新运行上方 `v0.1.6` 安装命令即可。
+通过 PyPI 包名进行 pipx 安装的用户执行：
 
 ```bash
-pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.5.zip
+pipx upgrade claude-provider-switcher
 ccs --version
 ccs profile list
 ```
+
+旧版若通过 GitHub URL 安装到 pipx，可执行一次
+`pipx install --force claude-provider-switcher` 改用 PyPI 包名作为安装源。
+这不会删除 profiles 或密钥。若安装位置发生变化，请重新 `ccs use <profile>`，
+让凭据 helper 引用新的路径。
 
 旧版运行过的机器也会出现 APIMaster：新版首次加载时，把 `profiles.json`
 从格式版本 1 升级为 2，只补入缺少的新预设。原文件先备份到同目录下的

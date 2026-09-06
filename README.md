@@ -17,7 +17,7 @@ Python 3.10+ is required. This initial release is available from GitHub;
 **it has not been published to PyPI**. Install with pipx:
 
 ```bash
-pipx install git+https://github.com/RomaCredit/claude-provider-switcher.git
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
 ccs --version
 ```
 
@@ -36,7 +36,7 @@ Ubuntu/Debian may reject system `pip` with `externally-managed-environment`;
 do not disable that protection. Alternatively use the standalone installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.sh | sh
 ccs --version
 ```
 
@@ -44,10 +44,24 @@ The standalone installer requires Python 3.10+, installs both command names,
 and never changes Claude settings during installation. Windows users can run:
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.ps1 | iex
 ```
 
 ## Quick start
+
+APIMaster is preconfigured using its
+[Claude Code setup guide](https://apimaster.ai/docs/en/cli/claude-code):
+
+```bash
+ccs use apimaster
+```
+
+The first interactive switch asks only for your API key, with input hidden.
+Subsequent switches reuse the saved credential. `ccs` -> **Switch provider**
+offers the same flow. The preset contains the endpoint, model, authentication
+kind and compatibility options, not a shared or bundled API key.
+
+For another Anthropic-compatible provider:
 
 ```bash
 ccs profile list
@@ -76,7 +90,7 @@ The default profiles are:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "profiles": {
     "official": {"type": "subscription", "base_url": "", "model": "", "auth_kind": "api_key"},
     "anthropic": {
@@ -84,10 +98,46 @@ The default profiles are:
       "base_url": "https://api.anthropic.com",
       "model": "claude-sonnet-4-6",
       "auth_kind": "api_key"
+    },
+    "apimaster": {
+      "type": "api",
+      "base_url": "https://apimaster.ai",
+      "model": "claude-sonnet-4-6",
+      "auth_kind": "auth_token",
+      "env": {
+        "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+        "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1"
+      }
     }
   }
 }
 ```
+
+The APIMaster URL deliberately has **no `/v1` suffix**: Claude Code appends
+`/v1/messages` itself. This differs from the Codex preset's OpenAI base URL.
+All three presets are ordinary, editable and removable profiles. The optional
+`env` object only accepts the two compatibility flags above with string values
+`"0"` or `"1"`; it cannot carry keys or arbitrary environment variables.
+
+### Upgrading from 0.1.0 or 0.1.1
+
+Rerun the new standalone installer above, or update a pipx installation with:
+
+```bash
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+ccs --version
+ccs profile list
+```
+
+The first profile load migrates `profiles.json` from schema 1 to schema 2 and
+adds only missing newly introduced presets. It first saves the original bytes
+as `profiles-v1-<id>.backup.json` in the switcher data directory. Existing
+same-name profiles and saved credentials are preserved; Claude settings are
+not switched by this migration. Deleting a preset after migration is permanent
+until you add it again. Do not delete your profiles file to upgrade.
+An older switcher cannot read schema 2; restore the version-1 backup before
+downgrading. Noninteractive users can save a credential with
+`ccs profile key apimaster --key-stdin` before `ccs use apimaster`.
 
 API profiles must expose the Anthropic Messages API at a base URL. Claude Code
 uses `/v1/messages`; an OpenAI-only `/v1/chat/completions` endpoint is not

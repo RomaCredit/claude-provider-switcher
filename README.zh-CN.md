@@ -15,7 +15,7 @@ Claude Code 的最终配置还会受到环境变量、项目 settings、命令�
 已有 pipx 的环境可以直接安装：
 
 ```bash
-pipx install git+https://github.com/RomaCredit/claude-provider-switcher.git
+pipx install https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
 ccs --version
 ```
 
@@ -34,7 +34,7 @@ Ubuntu/Debian 提示 `externally-managed-environment` 时不要强行绕过系�
 可改用上面的虚拟环境、pipx，或独立安装脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.sh | sh
 ccs --version
 ```
 
@@ -42,10 +42,23 @@ ccs --version
 `claude-provider-switcher`，安装过程不会修改 Claude 配置。Windows：
 
 ```powershell
-irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.1/install.ps1 | iex
+irm https://raw.githubusercontent.com/RomaCredit/claude-provider-switcher/v0.1.2/install.ps1 | iex
 ```
 
 ## 快速开始
+
+使用 APIMaster 时，地址、模型、认证方式和兼容选项已经按其
+[Claude Code 文档](https://apimaster.ai/docs/en/cli/claude-code) 预填：
+
+```bash
+ccs use apimaster
+```
+
+第一次只需隐藏输入自己的 API key，以后切换会复用已保存的密钥。
+直接运行 `ccs`，在 **Switch provider** 中选择 `apimaster` 也是同样的流程。
+“预配置”不包含共享 API key，也不会从 Codex 配置中擅自复制凭据。
+
+其他 Anthropic 兼容服务可以自行添加：
 
 ```bash
 ccs profile list
@@ -69,8 +82,45 @@ macOS/Linux: ~/.claude-provider-switcher/profiles.json
 Windows:     %USERPROFILE%\.claude-provider-switcher\profiles.json
 ```
 
-内置 `official` 订阅 profile 和 `anthropic` API profile。用户 profile 与内置
-profile 使用同一套逻辑，可以编辑或删除。
+内置 `official` 订阅、`anthropic` 官方 API 和 `apimaster` 三个 profile。
+APIMaster 预设内容：
+
+```json
+{
+  "type": "api",
+  "base_url": "https://apimaster.ai",
+  "model": "claude-sonnet-4-6",
+  "auth_kind": "auth_token",
+  "env": {
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1"
+  }
+}
+```
+
+Claude Code 使用的是根地址，**不能照搬 Codex 预设的 `/v1` 后缀**。
+用户 profile 与内置 profile 使用同一套逻辑，均可编辑或删除。
+可选 `env` 只允许上述两个兼容选项，值必须为字符串 `"0"` 或 `"1"`，
+不允许存储密钥或任意环境变量；切换到其他 profile 后会清理这些兼容选项。
+
+### 从旧版升级
+
+使用安装脚本的用户重新运行上方 `v0.1.2` 安装命令即可。
+通过 pipx 安装的用户执行：
+
+```bash
+pipx install --force https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v0.1.2.zip
+ccs --version
+ccs profile list
+```
+
+旧版运行过的机器也会出现 APIMaster：新版首次加载时，把 `profiles.json`
+从格式版本 1 升级为 2，只补入缺少的新预设。原文件先备份到同目录下的
+`profiles-v1-<id>.backup.json`，已有同名自定义配置、其他 profile 和密钥均保留，
+不会自动切换 Claude 的当前设置。升级后主动删除的预设不会再次自动出现。
+**不要删除原配置文件来升级。** 若要降级到 0.1.1 或更早版本，先恢复版本 1 的备份。
+非交互环境先用 `ccs profile key apimaster --key-stdin` 从安全输入流保存密钥，
+再执行切换。
 
 API profile 的地址必须提供 Anthropic Messages API，即 Claude Code 使用的
 `/v1/messages`。只有 OpenAI `/v1/chat/completions` 的端点不能直接使用，除非

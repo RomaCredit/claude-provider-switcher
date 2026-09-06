@@ -14,7 +14,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .credentials import Credentials
-from .profiles import Profile, Profiles, validate_name
+from .profiles import COMPATIBILITY_ENV, Profile, Profiles, validate_name
 from .storage import SwitcherError, mutation_lock, read_object, write_object
 
 
@@ -34,7 +34,7 @@ TOP_KEYS = {"apiKeyHelper", "model", "modelOverrides", "forceLoginMethod"}
 
 
 def owned_env(key: str) -> bool:
-    return key in ENV_KEYS or key.startswith("ANTHROPIC_DEFAULT_")
+    return key in ENV_KEYS or key in COMPATIBILITY_ENV or key.startswith("ANTHROPIC_DEFAULT_")
 
 
 def settings_env(data: dict) -> dict:
@@ -87,6 +87,7 @@ class Switcher:
         for key in TOP_KEYS:
             data.pop(key, None)
         if profile.type == "api":
+            env.update(profile.env)
             env["ANTHROPIC_BASE_URL"] = profile.base_url.rstrip("/")
             env["ANTHROPIC_MODEL"] = profile.model
             # Keep built-in model aliases and background requests on a gateway's

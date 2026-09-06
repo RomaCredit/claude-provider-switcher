@@ -1,4 +1,5 @@
 import os
+import json
 import shlex
 import shutil
 import subprocess
@@ -19,6 +20,32 @@ class PackageTests(unittest.TestCase):
         self.assertIn(f'version = "{__version__}"', (ROOT / "pyproject.toml").read_text())
         self.assertIn(f":-v{__version__}", (ROOT / "install.sh").read_text())
         self.assertIn(f"'v{__version__}'", (ROOT / "install.ps1").read_text())
+
+    @unittest.skipUnless(os.name == "nt", "PowerShell installer integration")
+    def test_windows_pipx_path_upgrades_and_can_be_repeated(self):
+        shell = shutil.which("pwsh") or shutil.which("powershell")
+        self.assertIsNotNone(shell)
+        script = """
+$ErrorActionPreference = 'Stop'
+$global:ccsCalls = @()
+function pipx {
+    $global:ccsCalls += ,@($args)
+    $global:LASTEXITCODE = 0
+}
+& $env:CCS_TEST_INSTALLER | Out-Null
+& $env:CCS_TEST_INSTALLER | Out-Null
+ConvertTo-Json -InputObject $global:ccsCalls -Compress
+"""
+        result = subprocess.run(
+            [shell, "-NoProfile", "-NonInteractive", "-Command", script],
+            env={**os.environ, "CCS_TEST_INSTALLER": str(ROOT / "install.ps1")},
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), [[
+            "install", "--force",
+            f"https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/v{__version__}.zip",
+        ]] * 2)
 
 
 @unittest.skipUnless(os.name == "posix", "POSIX installer runs on Linux/macOS CI")

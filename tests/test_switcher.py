@@ -63,7 +63,7 @@ class Fixture(unittest.TestCase):
 class ProfilesTests(Fixture):
     def test_defaults_generated_once_and_mutable(self):
         profiles = self.switcher.profiles.load()
-        self.assertEqual(set(profiles), {"official", "anthropic"})
+        self.assertEqual(set(profiles), {"official", "anthropic", "apimaster"})
         self.switcher.profiles.save({})
         self.assertEqual(self.switcher.profiles.load(), {})
 
@@ -74,7 +74,7 @@ class ProfilesTests(Fixture):
         self.assertNotIn(SECRET, str(caught.exception))
 
     def test_malformed_schema_is_not_replaced(self):
-        for value in ({}, {"version": True, "profiles": {}}, {"version": 2, "profiles": {}}, {"version": 1, "profiles": []}):
+        for value in ({}, {"version": True, "profiles": {}}, {"version": 3, "profiles": {}}, {"version": 1, "profiles": []}):
             write_object(self.switcher.profiles.path, value)
             before = self.switcher.profiles.path.read_bytes()
             with self.assertRaises(SwitcherError):
@@ -389,7 +389,7 @@ class CliTests(Fixture):
             "4", "2", "new", "https://example.com", "model",
             "4", "5", "2", "", "new-model", "",
             "4", "3", "2",
-            "4", "4", "3", "y",
+            "4", "4", "4", "y",
             "0",
         ]
         with patch("sys.stdin.isatty", return_value=True), patch("builtins.input", side_effect=values), patch("getpass.getpass", return_value=SECRET), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
@@ -409,7 +409,7 @@ class CliTests(Fixture):
         with patch("claude_provider_switcher.cli.probe", return_value={"ok": True}) as mocked:
             self.assertEqual(self.cli(["profile", "test", "local", "--inference"])[0], 0)
             self.assertTrue(mocked.call_args.kwargs["inference"])
-            self.assertEqual(self.cli(["menu"], "3\n2\n0\n")[0], 0)
+            self.assertEqual(self.cli(["menu"], "3\n3\n0\n")[0], 0)
 
     def test_extra_validation_paths(self):
         self.add_api()

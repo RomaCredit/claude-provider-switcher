@@ -89,6 +89,12 @@ def confirm(message: str, yes: bool) -> None:
 
 
 def switch_message(switcher: Switcher, name: str):
+    profile = switcher.profiles.get(name)
+    if profile.type == "api" and not switcher.credentials.get(name) and sys.stdin.isatty():
+        secret = read_secret(False)
+        with mutation_lock(switcher.root):
+            backend = switcher.credentials.set(name, secret)
+        print(f"Credential saved using {backend} storage.")
     backup = switcher.use(name)
     print(f"Configured profile: {name}")
     print(f"Backup: {backup}")

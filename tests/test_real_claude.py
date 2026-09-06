@@ -28,7 +28,7 @@ class RealClaudeTests(unittest.TestCase):
             switcher = Switcher(base / "switcher", base / "claude", vault=FileOnlyVault())
             profiles = switcher.profiles.load()
             for kind, variable in (("api_key", "ANTHROPIC_API_KEY"), ("auth_token", "ANTHROPIC_AUTH_TOKEN")):
-                profiles["local"] = Profile("api", "http://127.0.0.1:1", "test-model", kind)
+                profiles["local"] = Profile("api", "http://127.0.0.1:1", "test-model", kind, profiles["apimaster"].env)
                 switcher.profiles.save(profiles)
                 switcher.credentials.set("local", "sk-fake-local-no-network")
                 write_object(switcher.settings_path, {

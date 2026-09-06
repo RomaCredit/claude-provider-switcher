@@ -1,13 +1,13 @@
 param(
     [ValidatePattern('^v[0-9]+\.[0-9]+\.[0-9]+$')]
-    [string]$Version = 'v0.1.1',
+    [string]$Version = 'v0.1.2',
     [string]$InstallDirectory,
     [switch]$NoPipx
 )
 $ErrorActionPreference = 'Stop'
 $archive = "https://github.com/RomaCredit/claude-provider-switcher/archive/refs/tags/$Version.zip"
 if (-not $NoPipx -and -not $InstallDirectory -and (Get-Command pipx -ErrorAction SilentlyContinue)) {
-    & pipx install $archive
+    & pipx install --force $archive
     if ($LASTEXITCODE -ne 0) { throw 'pipx installation failed.' }
     Write-Output 'Run: ccs --version. Use pipx ensurepath if the command is not found.'
     return
